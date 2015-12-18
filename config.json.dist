@@ -1,0 +1,16 @@
+{
+  "data_base": {
+    "locales": ["en", "es", "ru", "pt", "ch"],
+    "collection": "translations"
+  },
+
+  "servers": {
+    "git_notifications": null,
+    "tms_notifications": null
+  },
+  "repository": null,
+  "commit_message": "Automerging translations",
+  "namespaces": {
+
+  }
+};
