@@ -1,0 +1,9 @@
+{
+  "name": "dialect-sync",
+  "description": "Sync script for desygner translations",
+  "author": "Nax <ignacio.gustavo.diaz@gmail.com>",
+  "dependencies": {
+    "mongodb": "^2.0.52",
+    "underscore": "^1.8.3"
+  }
+}
