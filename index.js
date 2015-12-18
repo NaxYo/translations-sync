@@ -4,6 +4,7 @@ var _ = require('underscore');
 var nodegit = require('nodegit');
 var exec = require('child_process').exec;
 var repository = require('./config').repository;
+var commitMessage = require('./config').commit_message;
 
 var dbRefresh = require('./lib/db-refresh');
 var filesRefresh = require('./lib/files-refresh');
@@ -18,18 +19,14 @@ gitPull();
 
 function gitPull() {
   var prePullReference;
-
   console.log('Starting pull process:');
 
-  filesRefresh();
-    /*
-  processRef()
-    .then(processPull);
-/*
   generateFiles()
     .then(processRef)
+    .then(processCommit)
     .then(processPull)
-*/
+    .then(processPush)
+
   function processRef() {
     return new Promise(function(resolve, reject) {
       var onFinish = getExecWrapper(resolve, reject, extractRef);
@@ -41,6 +38,23 @@ function gitPull() {
       console.log('\t+ Pre-pull reference: ' + prePullReference);
       resolve();
     }
+  }
+
+  function processCommit() {
+    return new Promise(function(resolve, reject) {
+      isCommitNeeded().then(function(isCommitNeeded) {
+        if(isCommitNeeded) {
+          doCommit().then(function(result) {
+            console.log('\t+ Pre-pull commit: ' + result.split('\n')[1]);
+            resolve();
+          });
+        }
+        else {
+          console.log('\t+ Nothing to commit...');
+          resolve();
+        }
+      });
+    });
   }
 
   function processPull() {
@@ -60,20 +74,70 @@ function gitPull() {
     }
   }
 
-  function processDiff() {
+  function processPush() {
+    return new Promise(function(resolve, reject) {
+      isPushNeeded().then(function(isPushNeeded) {
+        if(isPushNeeded) {
+          doPush().then(function(result) {
+            console.log('\t+ Changes pushed');
 
-  }
-
-  function refresh() {
-    // save .json backup
-    dbRefresh();
-    gitPush();
+            dbRefresh().then(function() {
+              console.log('\t+ Changes merged to the local DB');
+              resolve();
+            });
+          });
+        }
+        else {
+          console.log('\t+ Nothing to push...');
+          resolve();
+        }
+      });
+    });
   }
 }
 
+function isCommitNeeded() {
+  return new Promise(function(resolve, reject) {
+    var onFinish = getExecWrapper(resolve, reject, checkCommitNeeded);
+    exec('git status', { cwd: repository }, onFinish);
+  });
+
+  function checkCommitNeeded(result, resolve) {
+    resolve(result.split('\n')[2].indexOf('nothing to commit') < 0);
+  }
+}
+
+function isPushNeeded() {
+  return new Promise(function(resolve, reject) {
+    var onFinish = getExecWrapper(resolve, reject, checkCommitNeeded);
+    exec('git status', { cwd: repository }, onFinish);
+  });
+
+  function checkCommitNeeded(result, resolve) {
+    resolve(result.indexOf('(use "git push" to publish your local commits)') > -1);
+  }
+}
+
+function doCommit() {
+  return new Promise(function(resolve, reject) {
+    var onFinish = getExecWrapper(resolve, reject, resolve);
+    exec('git add . && git commit -am"' + commitMessage + '"', { cwd: repository }, onFinish);
+  });
+}
+
+function doPush() {
+  return new Promise(function(resolve, reject) {
+    var onFinish = getExecWrapper(resolve, reject, resolve);
+    exec('git push', { cwd: repository }, onFinish);
+  });
+}
+
 function generateFiles() {
-  return filesRefresh().then(function() {
-    console.log('Files generated');
+  return new Promise(function(resolve, reject) {
+    filesRefresh().then(function() {
+      console.log('Files generated');
+      resolve();
+    });
   });
 }
 
