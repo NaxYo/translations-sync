@@ -3,6 +3,7 @@
   "description": "Sync script for desygner translations",
   "author": "Nax <ignacio.gustavo.diaz@gmail.com>",
   "dependencies": {
+    "js-beautify": "^1.5.10",
     "mongodb": "^2.0.52",
     "underscore": "^1.8.3"
   }

@@ -1,8 +1,10 @@
+var _ = require('underscore');
 var nodegit = require('nodegit');
 var exec = require('child_process').exec;
 var repository = require('./config').repository;
 
 var dbRefresh = require('./lib/db-refresh');
+var filesRefresh = require('./lib/files-refresh');
 /*
 module.exports = {
   pull : pull,
@@ -16,6 +18,9 @@ function gitPull() {
   var prePullReference;
 
   console.log('Starting pull process:');
+
+  filesRefresh();
+    /*
   processRef()
     .then(processPull);
 /*
@@ -24,12 +29,10 @@ function gitPull() {
     .then(processPull)
 */
   function processRef() {
-    var promise = new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
       var onFinish = getExecWrapper(resolve, reject, extractRef);
       exec('git show-ref -s --abbrev', { cwd: repository }, onFinish);
     });
-
-    return promise;
 
     function extractRef(result, resolve) {
       prePullReference = result.split('\n')[0];
@@ -39,12 +42,10 @@ function gitPull() {
   }
 
   function processPull() {
-    var promise = new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
       var onFinish = getExecWrapper(resolve, reject, log);
       exec('git pull', { cwd: repository }, onFinish);
     });
-
-    return promise;
 
     function log(result, resolve) {
       var postPullReference = result
@@ -69,7 +70,9 @@ function gitPull() {
 }
 
 function generateFiles() {
-
+  return filesRefresh().then(function() {
+    console.log('Files generated');
+  });
 }
 
 function getExecWrapper(resolve, reject, callback) {
