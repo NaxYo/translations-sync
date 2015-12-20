@@ -16,7 +16,7 @@ var debouncedMerge = _.debounce((function() {
     isLocked = true;
     doMerge().then(function() { isLocked = false; });
   }
-})(),1 /*10 * 60 *  1000, true*/);
+})(), 10 * 60 *  1000, true);
 
 var tmsNotificationsServer = socketClient(servers['tms_notifications']);
 tmsNotificationsServer.on('merge', function() {
@@ -27,9 +27,11 @@ tmsNotificationsServer.on('merge', function() {
 
 var gitNotificationsServer = socketClient(servers['git_notifications']);
 gitNotificationsServer.on('postdeploy', function(data) {
-  var now = new Date();
-  log(now.format('[hh:mm:ss] ') + 'Merge fired from git');
-  data.repository === 'desygner' && data.author !== 'borges' && debouncedMerge();
+  if(data.repository === 'desygner' && data.author !== 'borges') {
+    var now = new Date();
+    log(now.format('[hh:mm:ss] ') + 'Merge fired from git');
+    debouncedMerge();
+  }
 });
 
 function doMerge() {
