@@ -1,18 +1,58 @@
 #!/usr/bin/env node
 
+require('date-format-lite');
+
+var fs = require('fs');
 var _ = require('underscore');
-var servers = require('./config.js').servers;
+var exec = require('child_process').exec;
+var servers = require('./config.json').servers;
 var socketClient = require('socket.io-client');
 
-var merge = _.debounce(require('./lib/merge'), 10 * 60 * 1000, true);
+var debouncedMerge = _.debounce((function() {
+  var isLocked = false;
 
-var tmsNotificationsServer = servers(servers['tms_notifications']);
-//tmsNotificationsServer.on('merge', merge);
+  return function() {
+    if(isLocked) return;
+    isLocked = true;
+    doMerge().then(function() { isLocked = false; });
+  }
+})(),1 /*10 * 60 *  1000, true*/);
+
+var tmsNotificationsServer = socketClient(servers['tms_notifications']);
 tmsNotificationsServer.on('merge', function() {
-  console.log('Merge fired from tms'):
+  var now = new Date();
+  log(now.format('[hh:mm:ss] ') + 'Merge fired from tms');
+  debouncedMerge();
 });
 
-var gitNotificationsServer = servers(servers['git_notifications']);
+var gitNotificationsServer = socketClient(servers['git_notifications']);
 gitNotificationsServer.on('postdeploy', function(data) {
-  data.repository === 'desygner' && data.author !== 'borges' && merge();
+  var now = new Date();
+  log(now.format('[hh:mm:ss] ') + 'Merge fired from git');
+  data.repository === 'desygner' && data.author !== 'borges' && debouncedMerge();
 });
+
+function doMerge() {
+  return new Promise(function(resolve) {
+    var now = new Date();
+    var output = '\n====== ';
+    output += now.format('DD/MM/YY hh:mm:ss');
+    output += ' ======n';
+
+    exec('./lib/merge.js', function(err, stdout, stderr) {
+      now = new Date();
+
+      output += stdout + ( err ? stderr : '' );
+      output = '\n====== ';
+      output += now.format('DD/MM/YY hh:mm:ss');
+      output += ' ======';
+      log(output);
+      resolve();
+    });
+  });
+}
+
+function log(data) {
+  console.log(data);
+  fs.appendFile('daemon.log', data + '\n');
+}
