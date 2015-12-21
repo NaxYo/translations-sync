@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 require('date-format-lite');
-var Promise = require('promise');
 
 var fs = require('fs');
 var _ = require('underscore');
+var Promise = require('promise');
 var exec = require('child_process').exec;
 var servers = require('./config.json').servers;
 var socketClient = require('socket.io-client');
