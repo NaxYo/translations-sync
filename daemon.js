@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 require('date-format-lite');
+var Promise = require('promise');
 
 var fs = require('fs');
 var _ = require('underscore');
