@@ -5,8 +5,9 @@ require('date-format-lite');
 var fs = require('fs');
 var _ = require('underscore');
 var Promise = require('promise');
+var config = require('./config.json');
 var exec = require('child_process').exec;
-var servers = require('./config.json').servers;
+var servers = config.servers;
 var socketClient = require('socket.io-client');
 
 var debouncedMerge = _.debounce((function() {
@@ -28,7 +29,7 @@ tmsNotificationsServer.on('merge', function() {
 
 var gitNotificationsServer = socketClient(servers['git_notifications']);
 gitNotificationsServer.on('postdeploy', function(data) {
-  if(data.repository === 'desygner' && data.author !== 'borges') {
+  if(data.repository === config['repo_name'] && data.author !== config['repo_user']) {
     var now = new Date();
     log(now.format('[hh:mm:ss] ') + 'Merge fired from git');
     debouncedMerge();
