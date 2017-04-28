@@ -5,7 +5,7 @@ require('date-format-lite');
 var fs = require('fs');
 var _ = require('underscore');
 var Promise = require('promise');
-var config = require('./config.json');
+var config = require('./lib/config');
 var exec = require('child_process').exec;
 var servers = config.servers;
 var socketClient = require('socket.io-client');
